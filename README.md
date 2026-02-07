@@ -1,5 +1,5 @@
 Markdown
-# 🛡️ Stremini AI - Scam URL Detector
+#  Stremini AI - Scam URL Detector
 
 An AI-powered API that detects malicious URLs (phishing, malware, scam sites) in real-time. 
 Built with **Python**, **Scikit-Learn (Random Forest)**, and **FastAPI**.
