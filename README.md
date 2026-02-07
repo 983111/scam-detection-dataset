@@ -1,16 +1,17 @@
-Markdown
-#  Stremini AI - Scam URL Detector
+# Stremini AI - Scam URL Detector
 
-An AI-powered API that detects malicious URLs (phishing, malware, scam sites) in real-time. 
-Built with **Python**, **Scikit-Learn (Random Forest)**, and **FastAPI**.
+An AI-powered API that detects malicious URLs (phishing, malware, scam sites) in real-time. Built with **Python**, **Scikit-Learn (Random Forest)**, and **FastAPI**.
 
 ## 📊 Dataset Overview
+
 This project uses a custom "High ROI" balanced dataset of **~28,000 URLs**:
-* **Malicious (50%):** Sourced from [URLhaus](https://urlhaus.abuse.ch/) (active malware distribution sites).
-* **Benign (50%):** Sourced from the [Tranco Top 1M](https://tranco-list.eu/) (globally trusted domains).
-* **Features:** The model analyzes lexical features like URL length, IP address usage, special characters, and path complexity.
+
+- **Malicious (50%):** Sourced from [URLhaus](https://urlhaus.abuse.ch/) (active malware distribution sites).
+- **Benign (50%):** Sourced from the [Tranco Top 1M](https://tranco-list.eu/) (globally trusted domains).
+- **Features:** The model analyzes lexical features like URL length, IP address usage, special characters, and path complexity.
 
 ## 🚀 Project Structure
+
 ```text
 scam-url-dataset/
 ├── README.md                  # Project Documentation
@@ -27,22 +28,32 @@ scam-url-dataset/
     ├── train_model.py         # Trains the ML model
     ├── predict_url.py         # CLI tool to test a single URL
     └── api.py                 # FastAPI server for real-time scanning
-🛠️ Installation
+```
+
+## 🛠️ Installation
+
 Clone the repository:
 
-Bash
-git clone [https://github.com/yourusername/stremini-scam-detector.git](https://github.com/yourusername/stremini-scam-detector.git)
+```bash
+git clone https://github.com/yourusername/stremini-scam-detector.git
 cd stremini-scam-detector
+```
+
 Install dependencies:
 
-Bash
+```bash
 pip install -r requirements.txt
-⚡ How to Run (Step-by-Step)
-Phase 1: Data Preparation
+```
+
+## ⚡ How to Run (Step-by-Step)
+
+### Phase 1: Data Preparation
+
 You must generate the dataset before training. Run these scripts in order:
 
-Bash
+```bash
 cd src
+
 # 1. Download fresh malware data
 python download_urlhaus.py
 
@@ -51,90 +62,125 @@ python make_scam_urls.py
 
 # 3. Add safe sites to balance the dataset
 python add_benign_data.py
-Phase 2: Training the AI
-Train the Random Forest classifier. This will create scam_detector.pkl.
+```
 
-Bash
+### Phase 2: Training the AI
+
+Train the Random Forest classifier. This will create `scam_detector.pkl`.
+
+```bash
 python train_model.py
-Expected Accuracy: >99%
+```
 
-Phase 3: Start the API Server
+**Expected Accuracy:** >99%
+
+### Phase 3: Start the API Server
+
 Launch the FastAPI server to accept real-time requests.
 
-Bash
+```bash
 uvicorn api:app --reload
-Server will start at: http://127.0.0.1:8000
+```
 
-🔌 API Usage
-Endpoint: /scan (POST)
+Server will start at: `http://127.0.0.1:8000`
+
+## 🔌 API Usage
+
+### Endpoint: `/scan` (POST)
+
 Send a JSON request with the URL you want to check.
 
-Request (cURL):
+**Request (cURL):**
 
-Bash
-curl -X POST "[http://127.0.0.1:8000/scan](http://127.0.0.1:8000/scan)" \
+```bash
+curl -X POST "http://127.0.0.1:8000/scan" \
      -H "Content-Type: application/json" \
-     -d '{"url": "[http://suspicious-site.com/login.php](http://suspicious-site.com/login.php)"}'
-Response:
+     -d '{"url": "http://suspicious-site.com/login.php"}'
+```
 
-JSON
+**Response:**
+
+```json
 {
-  "url": "[http://suspicious-site.com/login.php](http://suspicious-site.com/login.php)",
+  "url": "http://suspicious-site.com/login.php",
   "is_scam": true,
   "confidence_score": 0.9850,
   "risk_level": "CRITICAL"
 }
-⚠️ Bias & Limitations
-Source Bias: Malicious data is heavily weighted toward malware distribution (URLhaus) rather than social engineering phishing.
-
-Temporal Bias: Threat intelligence expires quickly. The model should be retrained weekly with fresh data.
-
-Benign Bias: Safe sites are drawn from "Top 1M" domains. Obscure but safe personal blogs might be misclassified if they use unusual URL structures (e.g., IP addresses).
-
-# Model Evaluation Report
-
-This document provides a detailed analysis of the Scam URL Detection model's performance, metrics, and feature importance.
+```
 
 ## 📊 Performance Metrics
+
 The model was evaluated using a 20% test split from a balanced dataset of 28,142 URLs.
 
 | Metric | Score |
-| :--- | :--- |
+|:---|:---|
 | **Accuracy** | 99.96% |
 | **Precision (Malicious)** | 1.00 |
 | **Recall (Malicious)** | 1.00 |
 | **F1-Score** | 1.00 |
 
-### **Understanding the 99.96% Accuracy**
+### Understanding the 99.96% Accuracy
+
 While 99.96% is exceptionally high, it is a result of the clear structural differences between the two data sources used:
-1.  **Malicious Source (URLhaus):** Frequently contains raw IP addresses, non-standard ports, and direct paths to executable files (e.g., `/bin.sh`, `/i`).
-2.  **Benign Source (Tranco):** Consists of top-level highly reputable domains (e.g., `google.com`) which rarely use raw IPs or suspicious file paths in their root structure.
+
+1. **Malicious Source (URLhaus):** Frequently contains raw IP addresses, non-standard ports, and direct paths to executable files (e.g., `/bin.sh`, `/i`).
+2. **Benign Source (Tranco):** Consists of top-level highly reputable domains (e.g., `google.com`) which rarely use raw IPs or suspicious file paths in their root structure.
 
 ## 🛠️ Feature Importance
+
 The Random Forest classifier relies on the following lexical features to make predictions:
 
-1.  **`has_ip`**: Most significant indicator. Malicious URLs in this dataset often use IP addresses instead of registered domain names.
-2.  **`url_length`**: Malicious URLs tend to be longer due to complex paths or encoded strings.
-3.  **`has_exe` / `has_php`**: The presence of server-side scripts or binary extensions in the path is a high-risk signal for malware distribution.
-4.  **`num_special_chars`**: Excessive use of `@`, `?`, and `&` is common in phishing and tracking URLs.
+1. **`has_ip`**: Most significant indicator. Malicious URLs in this dataset often use IP addresses instead of registered domain names.
+2. **`url_length`**: Malicious URLs tend to be longer due to complex paths or encoded strings.
+3. **`has_exe` / `has_php`**: The presence of server-side scripts or binary extensions in the path is a high-risk signal for malware distribution.
+4. **`num_special_chars`**: Excessive use of `@`, `?`, and `&` is common in phishing and tracking URLs.
 
 ## 📈 Confusion Matrix Summary
-Based on the classification report:
-* **True Positives (TP):** Scams correctly identified as scams.
-* **True Negatives (TN):** Safe sites correctly identified as safe.
-* **False Positives (FP):** Safe sites wrongly flagged (Very Low).
-* **False Negatives (FN):** Scams that bypassed detection (Very Low).
 
-## ⚠️ Limitations & Real-World Use
-* **Targeting Bias:** The model is highly effective against malware distribution points but may require more diverse phishing data to catch sophisticated social engineering "look-alike" domains.
-* **Inference Confidence:** In local testing, highly reputable root domains like `google.com` returned a 52% safe confidence, while specific malicious paths returned 100% scam confidence. This suggests the model is most certain when identifying clear malicious patterns rather than certifying safety.
+Based on the classification report:
+
+- **True Positives (TP):** Scams correctly identified as scams.
+- **True Negatives (TN):** Safe sites correctly identified as safe.
+- **False Positives (FP):** Safe sites wrongly flagged (Very Low).
+- **False Negatives (FN):** Scams that bypassed detection (Very Low).
+
+## ⚠️ Bias & Limitations
+
+### Source Bias
+Malicious data is heavily weighted toward malware distribution (URLhaus) rather than social engineering phishing.
+
+### Temporal Bias
+Threat intelligence expires quickly. The model should be retrained weekly with fresh data.
+
+### Benign Bias
+Safe sites are drawn from "Top 1M" domains. Obscure but safe personal blogs might be misclassified if they use unusual URL structures (e.g., IP addresses).
+
+### Inference Confidence
+In local testing, highly reputable root domains like `google.com` returned a 52% safe confidence, while specific malicious paths returned 100% scam confidence. This suggests the model is most certain when identifying clear malicious patterns rather than certifying safety.
 
 ## 🔄 Retraining Strategy
+
 Because the landscape of malicious URLs changes daily, this model should be retrained weekly using the `src/download_urlhaus.py` and `src/train_model.py` scripts to capture new attack patterns.
 
-🔮 Future Roadmap
-[ ] Add "Whois" domain age features (new domains are riskier).
+## 🔮 Future Roadmap
 
-[ ] Integrate Google Safe Browsing API as a secondary check.
+- [ ] Add "Whois" domain age features (new domains are riskier).
+- [ ] Integrate Google Safe Browsing API as a secondary check.
+- [ ] Deploy to Cloudflare Workers for edge latency.
 
-[ ] Deploy to Cloudflare Workers for edge latency.
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+
+## 👤 Author
+
+**Stremini AI Team**
+
+---
+
+*Built with ❤️ for a safer internet*
